@@ -3,7 +3,7 @@ name: verify-setup
 description: One-time auth setup for /verify. Captures Playwright session state to .verify/auth.json.
 ---
 
-# /verify-setup
+# /verify setup
 
 Run once before using /verify on any app that requires authentication.
 
@@ -61,6 +61,8 @@ mkdir -p .verify
 echo "A browser will open. Log in, then close the browser window."
 npx playwright codegen --save-storage=.verify/auth.json "$BASE_URL"
 ```
+
+This is the correct approach — the same browser session that captures login also saves the storage state. No session transfer needed.
 
 ### 5. Set permissions
 
