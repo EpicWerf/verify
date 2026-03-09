@@ -3,7 +3,7 @@
   "description": "Browser-based acceptance criteria verification for frontend PRs using Claude + Playwright",
   "version": "1.0.0",
   "author": {
-    "name": "Opslane",
+    "name": "opslane",
     "url": "https://github.com/opslane"
   },
   "homepage": "https://github.com/opslane/opslane-v3",
