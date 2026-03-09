@@ -23,9 +23,11 @@
   - Decision: replaced mapfile with while loop (bash 3 compat on macOS)
 - [x] Task 8: Stage 3 — Judge (commit: 49d615f)
   - Files: tools/verify/judge.sh, tools/verify/prompts/judge.txt, tools/verify/tests/test_judge.sh
+- [x] Task 9: Reporter (commit: d026d34)
+  - Files: tools/verify/report.sh, tools/verify/tests/test_report.sh
 
 ## Current
-Task 9: Reporter
+Task 10: /verify setup Skill
 
 ## Remaining
 Task 3: Planner Prompt Template
