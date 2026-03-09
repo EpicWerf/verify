@@ -38,10 +38,10 @@ if [ "${CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS:-}" = "1" ]; then
       -e "s|REPLACE_AC_ID|$AC_ID|g" \
       -e "s|REPLACE_BASE_URL|${VERIFY_BASE_URL}${AC_URL}|g" \
       -e "s|REPLACE_SCREENSHOT_AT|$SCREENSHOTS|g" \
-      "$SCRIPT_DIR/prompts/agent.txt" | python3 -c "
-import sys
+      "$SCRIPT_DIR/prompts/agent.txt" | REPLACE_STEPS_VAL="$STEPS" python3 -c "
+import sys, os
 content = sys.stdin.read()
-steps = '''$STEPS'''
+steps = os.environ['REPLACE_STEPS_VAL']
 print(content.replace('REPLACE_STEPS', steps))
 " > "$PROMPT_FILE"
 
@@ -54,12 +54,16 @@ print(content.replace('REPLACE_STEPS', steps))
       <<< "$AGENTS_JSON")
   done
 
-  MCP_CONFIG='{"playwright":{"command":"npx","args":["@playwright/mcp@latest","--save-video=1280x720","--caps","vision","--storage-state",".verify/auth.json","--save-trace"]}}'
+  # Write MCP config to temp file (--mcp-config expects a path)
+  MCP_CONFIG_FILE=$(mktemp /tmp/verify-mcp-XXXXXX.json)
+  echo '{"playwright":{"command":"npx","args":["@playwright/mcp@latest","--save-video=1280x720","--caps","vision","--storage-state",".verify/auth.json","--save-trace"]}}' > "$MCP_CONFIG_FILE"
+  # shellcheck disable=SC2064
+  trap "rm -f '$MCP_CONFIG_FILE'" EXIT
 
   "$CLAUDE" -p \
     --model sonnet \
     --dangerously-skip-permissions \
-    --mcp-config "$MCP_CONFIG" \
+    --mcp-config "$MCP_CONFIG_FILE" \
     --agents "$AGENTS_JSON" \
     "Run all browser verification agents. Each agent verifies one acceptance criterion and writes its verdict to .verify/evidence/<ac_id>/agent.log" \
     2>&1 | tee .verify/orchestrate.log

@@ -38,20 +38,20 @@ PROMPT=$(sed \
   -e "s|REPLACE_BASE_URL|${VERIFY_BASE_URL}${AC_URL}|g" \
   -e "s|REPLACE_SCREENSHOT_AT|$SCREENSHOTS|g" \
   "$SCRIPT_DIR/prompts/agent.txt")
-# Steps may be multi-line — use Python for safe substitution
-PROMPT=$(echo "$PROMPT" | python3 -c "
-import sys
+# Steps may be multi-line — pass via env var to avoid shell injection
+PROMPT=$(echo "$PROMPT" | REPLACE_STEPS_VAL="$STEPS" python3 -c "
+import sys, os
 content = sys.stdin.read()
-import os
-steps = '''$STEPS'''
+steps = os.environ['REPLACE_STEPS_VAL']
 print(content.replace('REPLACE_STEPS', steps))
 ")
 
 mkdir -p ".verify/evidence/$AC_ID" ".verify/prompts"
 echo "$PROMPT" > ".verify/prompts/${AC_ID}-agent.txt"
 
-# Playwright MCP config
-MCP_CONFIG=$(jq -n '{
+# Playwright MCP config — write to temp file (--mcp-config expects a path)
+MCP_CONFIG_FILE=$(mktemp /tmp/verify-mcp-XXXXXX.json)
+jq -n '{
   playwright: {
     command: "npx",
     args: [
@@ -62,7 +62,9 @@ MCP_CONFIG=$(jq -n '{
       "--save-trace"
     ]
   }
-}')
+}' > "$MCP_CONFIG_FILE"
+# shellcheck disable=SC2064
+trap "rm -f '$MCP_CONFIG_FILE'" EXIT
 
 echo "  → Agent $AC_ID (timeout: ${TIMEOUT_SECS}s)..."
 
@@ -70,7 +72,7 @@ set +e
 $TIMEOUT_CMD "$TIMEOUT_SECS" "$CLAUDE" -p \
   --model sonnet \
   --dangerously-skip-permissions \
-  --mcp-config "$MCP_CONFIG" \
+  --mcp-config "$MCP_CONFIG_FILE" \
   "$PROMPT" > ".verify/evidence/$AC_ID/claude.log" 2>&1
 EXIT_CODE=$?
 set -e
