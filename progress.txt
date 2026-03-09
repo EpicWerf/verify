@@ -25,9 +25,11 @@
   - Files: tools/verify/judge.sh, tools/verify/prompts/judge.txt, tools/verify/tests/test_judge.sh
 - [x] Task 9: Reporter (commit: d026d34)
   - Files: tools/verify/report.sh, tools/verify/tests/test_report.sh
+- [x] Task 10: /verify setup Skill (commit: ba26d2e)
+  - Files: .claude/skills/verify-setup.md
 
 ## Current
-Task 10: /verify setup Skill
+Task 11: /verify Main Skill
 
 ## Remaining
 Task 3: Planner Prompt Template
