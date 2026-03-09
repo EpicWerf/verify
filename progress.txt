@@ -9,9 +9,11 @@
 - [x] Task 2: Stage 0 — Pre-flight (commit: a1b3898)
   - Files: tools/verify/preflight.sh, tools/verify/tests/test_preflight.sh
   - Decision: env vars take precedence over config.json (needed for test isolation)
+- [x] Task 3: Planner Prompt Template (commit: 5c4fb75)
+  - Files: tools/verify/prompts/planner.txt
 
 ## Current
-Task 3: Planner Prompt Template
+Task 4: Stage 1 — Planner Script
 
 ## Remaining
 Task 3: Planner Prompt Template
