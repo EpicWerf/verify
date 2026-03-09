@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-FIXTURES="$SCRIPT_DIR/tests/fixtures"
+SCRIPTS_DIR="$(cd "$(dirname "$0")/../scripts" && pwd)"
+FIXTURES="$(cd "$(dirname "$0")/fixtures" && pwd)"
 mkdir -p "$FIXTURES"
 
 cat > "$FIXTURES/test-spec.md" << 'SPEC'
@@ -21,7 +21,7 @@ chmod +x "$MOCK_CLAUDE"
 
 mkdir -p .verify
 CLAUDE_BIN="$MOCK_CLAUDE" VERIFY_BASE_URL="http://localhost:3000" \
-  "$SCRIPT_DIR/planner.sh" "$FIXTURES/test-spec.md" 2>/dev/null
+  "$SCRIPTS_DIR/planner.sh" "$FIXTURES/test-spec.md" 2>/dev/null
 
 [ -f ".verify/plan.json" ] || { echo "FAIL: plan.json not created"; exit 1; }
 COUNT=$(jq '.criteria | length' .verify/plan.json)

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")/../scripts" && pwd)"
 
 mkdir -p .verify/evidence/ac1 .verify/evidence/ac2
 echo '{"criteria":[{"id":"ac1","description":"Header sticky","url":"/","steps":[],"screenshot_at":["after_scroll"]},{"id":"ac2","description":"Mobile nav","url":"/","steps":[],"screenshot_at":["initial"]}],"skipped":[]}' > .verify/plan.json

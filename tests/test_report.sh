@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")/../scripts" && pwd)"
 
 cat > .verify/report.json << 'JSON'
 {"verdict":"partial","summary":"2/3 ACs passed","criteria":[{"ac_id":"ac1","status":"pass","reasoning":"Header fixed","evidence":".verify/evidence/ac1/screenshot-after_scroll.png"},{"ac_id":"ac2","status":"fail","reasoning":"Hamburger missing","evidence":".verify/evidence/ac2/screenshot-initial.png"},{"ac_id":"ac3","status":"timeout","reasoning":"Timed out","evidence":""}],"skipped":["ac4: too vague"]}

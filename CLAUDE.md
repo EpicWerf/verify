@@ -9,9 +9,9 @@ opslane/verify — automated acceptance criteria verification for Claude Code ch
 - `gtimeout` (macOS coreutils) / `timeout` (Linux)
 
 ## Structure
-- `tools/verify/` — pipeline stages: `preflight.sh`, `planner.sh`, `orchestrate.sh`, `agent.sh`, `judge.sh`, `report.sh`
-- `tools/verify/prompts/` — Claude prompt templates for each stage
-- `tools/verify/tests/` — test scripts (one per stage)
+- `scripts/` — pipeline stages: `preflight.sh`, `planner.sh`, `orchestrate.sh`, `agent.sh`, `judge.sh`, `report.sh`
+- `scripts/prompts/` — Claude prompt templates for each stage
+- `tests/` — test scripts (one per stage)
 - `skills/verify/SKILL.md` — the `/verify` Claude Code skill
 - `skills/verify-setup/SKILL.md` — the `/verify-setup` skill
 - `.verify/` — runtime output (gitignored): `config.json`, `plan.json`, `evidence/`, `auth.json`
@@ -24,9 +24,9 @@ spec + PR → preflight → planner → orchestrate (parallel agents) → judge 
 Config lives in `.verify/config.json`. Env vars always override config.
 
 ## Commands
-- Test a single stage: `bash tools/verify/tests/test_preflight.sh`
-- Test all: `for f in tools/verify/tests/test_*.sh; do bash "$f"; done`
-- Full run (needs dev server): `bash tools/verify/preflight.sh && bash tools/verify/planner.sh "$SPEC_PATH"`
+- Test a single stage: `bash tests/test_preflight.sh`
+- Test all: `for f in tests/test_*.sh; do bash "$f"; done`
+- Full run (needs dev server): `bash scripts/preflight.sh && bash scripts/planner.sh "$SPEC_PATH"`
 
 ## Conventions
 - **Bash 3 compat**: use `while read` not `mapfile`. No bash 4+ features.
@@ -43,4 +43,4 @@ Config lives in `.verify/config.json`. Env vars always override config.
 ## References
 - Pipeline design: `docs/plans/2026-03-08-verify-implementation.md`
 - Eval sets: `docs/evals/eval-set-v1.json`
-- Prompt templates: `tools/verify/prompts/`
+- Prompt templates: `scripts/prompts/`
