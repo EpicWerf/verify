@@ -11,15 +11,15 @@ VERIFY_BASE_URL="${VERIFY_BASE_URL:-$(jq -r '.baseUrl // "http://localhost:3000"
 echo "→ Running Planner (Opus)..."
 echo "  Spec: $SPEC_PATH"
 
-# Collect changed React component files (tracked changes + new untracked files)
+# Collect changed React component files (process substitution keeps variable in current shell)
 COMPONENT_CONTEXT=""
-{
-  git diff --name-only HEAD 2>/dev/null
-  git ls-files --others --exclude-standard 2>/dev/null
-} | grep -E "\.(tsx?|jsx?)$" | head -10 | while IFS= read -r file; do
+while IFS= read -r file; do
   [ -f "$file" ] || continue
   COMPONENT_CONTEXT+="\n\n--- FILE: $file ---\n$(cat "$file")"
-done
+done < <({
+  git diff --name-only HEAD 2>/dev/null
+  git ls-files --others --exclude-standard 2>/dev/null
+} | grep -E "\.(tsx?|jsx?)$" | head -10)
 
 PROMPT="$(cat "$SCRIPT_DIR/prompts/planner.txt")
 
