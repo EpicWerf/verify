@@ -48,8 +48,8 @@ REPORT_JSON=$("$CLAUDE" -p \
   --dangerously-skip-permissions \
   "$PROMPT" 2>/dev/null)
 
-# Strip any markdown fences
-REPORT_JSON=$(echo "$REPORT_JSON" | sed '/^```/d' | sed '/^$/d')
+# Strip any markdown fences (jq . below will reformat, so don't strip blank lines)
+REPORT_JSON=$(echo "$REPORT_JSON" | sed '/^```/d')
 
 if ! echo "$REPORT_JSON" | jq . > /dev/null 2>&1; then
   echo "✗ Judge returned invalid JSON:"
