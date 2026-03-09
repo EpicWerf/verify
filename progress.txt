@@ -30,11 +30,14 @@
 - [x] Task 11: /verify Main Skill (commit: af1bf08)
   - Files: .claude/skills/verify.md
 
+- [x] Task 12: Run All Tests — all 6 tests PASS
+- [x] Task 13: Integration Smoke Test — SKIPPED (requires manual dev server)
+
 ## Current
-Task 12: Run All Tests
+COMPLETE
 
 ## Remaining
-Task 13: Integration Smoke Test (Manual) — SKIP
+(none)
 Task 3: Planner Prompt Template
 Task 4: Stage 1 — Planner Script
 Task 5: Agent Prompt Template
