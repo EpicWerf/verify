@@ -1,0 +1,8 @@
+# Verify pipeline — secrets and artifacts (config.json is committed)
+.verify/auth.json
+.verify/evidence/
+.verify/prompts/
+.verify/report.json
+.verify/plan.json
+.verify/.spec_path
+.verify/chrome-profile/
