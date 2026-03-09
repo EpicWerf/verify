@@ -1,0 +1,24 @@
+# Progress Tracker
+# Started: 2026-03-08
+# Plan: docs/plans/2026-03-08-verify-implementation.md
+
+## Completed
+- [x] Task 1: Project Bootstrap (commit: 610ae3c)
+  - Files: .gitignore, .verify/config.json
+  - Dirs: tools/verify/tests, tools/verify/prompts, .verify, .claude/skills
+
+## Current
+Task 2: Stage 0 — Pre-flight
+
+## Remaining
+Task 3: Planner Prompt Template
+Task 4: Stage 1 — Planner Script
+Task 5: Agent Prompt Template
+Task 6: Stage 2 — Single Browser Agent
+Task 7: Stage 2 — Agent Orchestrator
+Task 8: Stage 3 — Judge
+Task 9: Reporter
+Task 10: /verify setup Skill
+Task 11: /verify Main Skill
+Task 12: Run All Tests
+Task 13: Integration Smoke Test (Manual)
