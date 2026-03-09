@@ -18,9 +18,12 @@
 - [x] Task 6: Stage 2 — Single Browser Agent (commit: e309a95)
   - Files: tools/verify/agent.sh, tools/verify/tests/test_agent.sh
   - Decision: added mkdir -p .verify/prompts (missing from plan)
+- [x] Task 7: Stage 2 — Agent Orchestrator (commit: 9b7b9f2)
+  - Files: tools/verify/orchestrate.sh, tools/verify/tests/test_orchestrate.sh
+  - Decision: replaced mapfile with while loop (bash 3 compat on macOS)
 
 ## Current
-Task 7: Stage 2 — Agent Orchestrator
+Task 8: Stage 3 — Judge
 
 ## Remaining
 Task 3: Planner Prompt Template
