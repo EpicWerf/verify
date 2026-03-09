@@ -27,11 +27,14 @@
   - Files: tools/verify/report.sh, tools/verify/tests/test_report.sh
 - [x] Task 10: /verify setup Skill (commit: ba26d2e)
   - Files: .claude/skills/verify-setup.md
+- [x] Task 11: /verify Main Skill (commit: af1bf08)
+  - Files: .claude/skills/verify.md
 
 ## Current
-Task 11: /verify Main Skill
+Task 12: Run All Tests
 
 ## Remaining
+Task 13: Integration Smoke Test (Manual) — SKIP
 Task 3: Planner Prompt Template
 Task 4: Stage 1 — Planner Script
 Task 5: Agent Prompt Template
