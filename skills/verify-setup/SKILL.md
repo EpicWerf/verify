@@ -3,7 +3,7 @@ name: verify-setup
 description: One-time auth setup for /verify. Captures Playwright session state to .verify/auth.json.
 ---
 
-# /verify setup
+# /verify-setup
 
 Run once before using /verify on any app that requires authentication.
 

@@ -9,7 +9,7 @@ Verify your frontend changes before pushing.
 
 ## Prerequisites
 - Dev server running (e.g. `npm run dev`)
-- Auth set up (`/verify setup`) if app requires login
+- Auth set up (`/verify-setup`) if app requires login
 
 ## Steps
 
@@ -98,13 +98,13 @@ VERIFY_ALLOW_DANGEROUS=1 bash "${CLAUDE_PLUGIN_ROOT}/scripts/report.sh"
 |---------|--------|
 | Pre-flight fails | Print error, stop |
 | 0 criteria after human review | Print message, stop |
-| All agents timeout/error | Print "Check dev server and auth", suggest `/verify setup` |
+| All agents timeout/error | Print "Check dev server and auth", suggest `/verify-setup` |
 | Judge returns invalid JSON | Print raw output, tell user to check `.verify/evidence/` manually |
 
 ## Quick Reference
 
 ```bash
-/verify setup                                          # one-time auth
+/verify-setup                                          # one-time auth
 /verify                                                # run pipeline
 npx playwright show-report .verify/evidence/<id>/trace # debug failure
 open .verify/evidence/<id>/session.webm                # watch video

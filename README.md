@@ -4,7 +4,7 @@ Browser-based acceptance criteria verification for frontend PRs. Runs Claude + P
 
 ## How it works
 
-1. `/verify setup` — one-time: captures auth session for apps that require login
+1. `/verify-setup` — one-time: captures auth session for apps that require login
 2. `/verify` — runs the full pipeline:
    - **Planner**: reads your spec doc, extracts testable ACs
    - **Browser Agents**: one Claude+Playwright agent per AC, takes screenshots
@@ -39,7 +39,7 @@ Install the plugin:
 
 ```bash
 # One-time auth setup (skip if app has no login)
-/verify setup
+/verify-setup
 
 # Run verification
 /verify
@@ -47,7 +47,7 @@ Install the plugin:
 
 ## Configuration
 
-`.verify/config.json` (created by `/verify setup`):
+`.verify/config.json` (created by `/verify-setup`):
 
 ```json
 {
