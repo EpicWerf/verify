@@ -3,6 +3,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE="${CLAUDE_BIN:-claude}"
 
+if [ "${VERIFY_ALLOW_DANGEROUS:-0}" != "1" ]; then
+  echo "✗ This script runs claude with --dangerously-skip-permissions."
+  echo "  Set VERIFY_ALLOW_DANGEROUS=1 to proceed."
+  exit 1
+fi
+
 [ -f ".verify/plan.json" ] || { echo "✗ .verify/plan.json not found"; exit 1; }
 echo "→ Running Judge (Opus)..."
 
@@ -13,40 +19,50 @@ while IFS= read -r line; do
   AC_IDS+=("$line")
 done < <(jq -r '.criteria[].id' .verify/plan.json)
 
-# Build evidence block — base64-encode screenshots inline (claude -p has no --file for local images)
-EVIDENCE=""
+PROMPT_FILE=".verify/judge-prompt.txt"
+# Build prompt by appending directly to file — avoids printf %b interpreting
+# backslash sequences in log content (e.g. \n, \t inside agent logs)
+{
+  cat "$SCRIPT_DIR/prompts/judge.txt"
+  printf "\n\nEVIDENCE:\n"
+} > "$PROMPT_FILE"
+
 for AC_ID in "${AC_IDS[@]}"; do
   AC_DESC=$(jq -r --arg id "$AC_ID" '.criteria[] | select(.id==$id) | .description' .verify/plan.json)
-  EVIDENCE+="\n--- AC: $AC_ID ---\n"
-  EVIDENCE+="CRITERION: $AC_DESC\n"
+  printf "\n--- AC: %s ---\nCRITERION: %s\n" "$AC_ID" "$AC_DESC" >> "$PROMPT_FILE"
 
   LOG_FILE=".verify/evidence/$AC_ID/agent.log"
   if [ -f "$LOG_FILE" ]; then
-    EVIDENCE+="AGENT LOG:\n$(cat "$LOG_FILE")\n"
+    printf "AGENT LOG:\n" >> "$PROMPT_FILE"
+    cat "$LOG_FILE" >> "$PROMPT_FILE"
+    printf "\n" >> "$PROMPT_FILE"
   else
-    EVIDENCE+="AGENT LOG: not found\n"
+    printf "AGENT LOG: not found\n" >> "$PROMPT_FILE"
   fi
 
-  # Embed screenshots as base64 inline — Opus can read them in the prompt
-  while IFS= read -r screenshot; do
-    [ -f "$screenshot" ] || continue
-    LABEL=$(basename "$screenshot" .png)
-    B64=$(base64 < "$screenshot" | tr -d '\n')
-    EVIDENCE+="SCREENSHOT ($LABEL): data:image/png;base64,${B64}\n"
-  done < <(find ".verify/evidence/$AC_ID" -name "screenshot-*.png" 2>/dev/null | sort)
+  # Embed one screenshot per AC — resize to 300px to keep prompt under limits
+  SCREENSHOT=$(find ".verify/evidence/$AC_ID" -name "screenshot-*.png" 2>/dev/null | sort | head -1)
+  if [ -f "$SCREENSHOT" ]; then
+    THUMB=$(mktemp /tmp/verify-thumb-XXXXXX.png)
+    trap "rm -f '$THUMB'" EXIT
+    if command -v sips >/dev/null 2>&1; then
+      sips -Z 300 "$SCREENSHOT" --out "$THUMB" >/dev/null 2>&1 || cp "$SCREENSHOT" "$THUMB"
+    else
+      cp "$SCREENSHOT" "$THUMB"
+    fi
+    printf "SCREENSHOT (%s): data:image/png;base64," "$(basename "$SCREENSHOT" .png)" >> "$PROMPT_FILE"
+    base64 < "$THUMB" | tr -d '\n' >> "$PROMPT_FILE"
+    printf "\n" >> "$PROMPT_FILE"
+    rm -f "$THUMB"
+  fi
 done
 
-PROMPT="$(cat "$SCRIPT_DIR/prompts/judge.txt")
-
-EVIDENCE:
-$EVIDENCE
-
-SKIPPED FROM PLAN: $SKIPPED"
+printf "\nSKIPPED FROM PLAN: %s\n" "$SKIPPED" >> "$PROMPT_FILE"
 
 REPORT_JSON=$("$CLAUDE" -p \
   --model opus \
   --dangerously-skip-permissions \
-  "$PROMPT" 2>/dev/null)
+  < "$PROMPT_FILE" 2>/dev/null)
 
 # Strip any markdown fences (jq . below will reformat, so don't strip blank lines)
 REPORT_JSON=$(echo "$REPORT_JSON" | sed '/^```/d')

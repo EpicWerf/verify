@@ -3,6 +3,12 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 CLAUDE="${CLAUDE_BIN:-claude}"
 
+if [ "${VERIFY_ALLOW_DANGEROUS:-0}" != "1" ]; then
+  echo "✗ This script runs claude with --dangerously-skip-permissions."
+  echo "  Set VERIFY_ALLOW_DANGEROUS=1 to proceed."
+  exit 1
+fi
+
 AC_ID="$1"
 TIMEOUT_SECS="${2:-90}"
 
@@ -30,24 +36,24 @@ AC_URL=$(echo "$AC_JSON" | jq -r '.url')
 STEPS=$(echo "$AC_JSON" | jq -r '.steps[]' | nl -ba)
 SCREENSHOTS=$(echo "$AC_JSON" | jq -r '.screenshot_at | join(", ")')
 
-# Build agent prompt inline (no separate build_agent_prompt.sh)
-# Use sed with global replacement so all REPLACE_AC_ID occurrences are substituted
-PROMPT=$(sed \
-  -e "s|REPLACE_AC_DESCRIPTION|$AC_DESC|g" \
-  -e "s|REPLACE_AC_ID|$AC_ID|g" \
-  -e "s|REPLACE_BASE_URL|${VERIFY_BASE_URL}${AC_URL}|g" \
-  -e "s|REPLACE_SCREENSHOT_AT|$SCREENSHOTS|g" \
-  "$SCRIPT_DIR/prompts/agent.txt")
-# Steps may be multi-line — pass via env var to avoid shell injection
-PROMPT=$(echo "$PROMPT" | REPLACE_STEPS_VAL="$STEPS" python3 -c "
-import sys, os
-content = sys.stdin.read()
-steps = os.environ['REPLACE_STEPS_VAL']
-print(content.replace('REPLACE_STEPS', steps))
-")
-
+# Build agent prompt — all substitutions via env vars to avoid sed injection
+# (values come from LLM-generated plan.json and may contain sed delimiter chars)
 mkdir -p ".verify/evidence/$AC_ID" ".verify/prompts"
-echo "$PROMPT" > ".verify/prompts/${AC_ID}-agent.txt"
+REPLACE_AC_DESCRIPTION="$AC_DESC" \
+REPLACE_AC_ID="$AC_ID" \
+REPLACE_BASE_URL="${VERIFY_BASE_URL}${AC_URL}" \
+REPLACE_SCREENSHOT_AT="$SCREENSHOTS" \
+REPLACE_STEPS_VAL="$STEPS" \
+python3 -c "
+import sys, os
+content = open(sys.argv[1]).read()
+content = content.replace('REPLACE_AC_DESCRIPTION', os.environ['REPLACE_AC_DESCRIPTION'])
+content = content.replace('REPLACE_AC_ID',          os.environ['REPLACE_AC_ID'])
+content = content.replace('REPLACE_BASE_URL',       os.environ['REPLACE_BASE_URL'])
+content = content.replace('REPLACE_SCREENSHOT_AT',  os.environ['REPLACE_SCREENSHOT_AT'])
+content = content.replace('REPLACE_STEPS',          os.environ['REPLACE_STEPS_VAL'])
+print(content, end='')
+" "$SCRIPT_DIR/prompts/agent.txt" > ".verify/prompts/${AC_ID}-agent.txt"
 
 # Playwright MCP config — write to temp file (--mcp-config expects a path)
 MCP_CONFIG_FILE=$(mktemp /tmp/verify-mcp-XXXXXX.json)
@@ -71,11 +77,12 @@ trap "rm -f '$MCP_CONFIG_FILE'" EXIT
 echo "  → Agent $AC_ID (timeout: ${TIMEOUT_SECS}s)..."
 
 set +e
+# Read prompt from file — avoids ARG_MAX limits
 $TIMEOUT_CMD "$TIMEOUT_SECS" "$CLAUDE" -p \
   --model sonnet \
   --dangerously-skip-permissions \
   --mcp-config "$MCP_CONFIG_FILE" \
-  "$PROMPT" > ".verify/evidence/$AC_ID/claude.log" 2>&1
+  < ".verify/prompts/${AC_ID}-agent.txt" > ".verify/evidence/$AC_ID/claude.log" 2>&1
 EXIT_CODE=$?
 set -e
 
