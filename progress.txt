@@ -15,9 +15,12 @@
   - Files: tools/verify/planner.sh, tools/verify/tests/test_planner.sh
 - [x] Task 5: Agent Prompt Template (commit: b3fd30d)
   - Files: tools/verify/prompts/agent.txt
+- [x] Task 6: Stage 2 — Single Browser Agent (commit: e309a95)
+  - Files: tools/verify/agent.sh, tools/verify/tests/test_agent.sh
+  - Decision: added mkdir -p .verify/prompts (missing from plan)
 
 ## Current
-Task 6: Stage 2 — Single Browser Agent
+Task 7: Stage 2 — Agent Orchestrator
 
 ## Remaining
 Task 3: Planner Prompt Template
