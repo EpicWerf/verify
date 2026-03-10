@@ -6,20 +6,22 @@ A verification layer for Claude Code. Reads your spec doc, runs one browser agen
 
 ```mermaid
 graph LR
-    A[spec doc] --> B[planner]
-    B --> C[agent: AC 1]
-    B --> D[agent: AC 2]
-    B --> E[agent: AC n]
-    C --> F[judge]
-    D --> F
-    E --> F
-    F --> G[report]
+    A[spec doc] --> B[spec interpreter]
+    B --> C[planner]
+    C --> D[agent: AC 1]
+    C --> E[agent: AC 2]
+    C --> F[agent: AC n]
+    D --> G[judge]
+    E --> G
+    F --> G
+    G --> H[report]
 ```
 
-1. **Planner** — extracts testable acceptance criteria from your spec
-2. **Agents** — one Claude + Playwright agent per AC, runs against your dev server
-3. **Judge** — reviews screenshots and traces, returns pass/fail per AC
-4. **Report** — prints results; failures include screenshot links and session recordings
+1. **Spec Interpreter** — reviews each AC for testability gaps, asks clarifying questions
+2. **Planner** — extracts testable acceptance criteria from the annotated spec
+3. **Agents** — one Claude + Playwright agent per AC, runs against your dev server
+4. **Judge** — reviews screenshots and traces, returns pass/fail per AC
+5. **Report** — prints results; failures include screenshot links and session recordings
 
 ![Verify Report](docs/report-screenshot.png)
 
@@ -45,11 +47,11 @@ graph LR
 # One-time auth setup (skip if your app has no login)
 /verify-setup
 
-# Run verification
-/verify docs/plans/my-feature.md
+# Run verification — will ask you for the spec
+/verify
 ```
 
-If you don't pass a spec path, `/verify` will ask you for one.
+`/verify` always asks for your spec upfront, then walks you through any clarifying questions before running.
 
 ## Debugging failures
 
