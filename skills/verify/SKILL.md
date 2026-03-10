@@ -36,7 +36,13 @@ Do not call any tools. Do not run any bash commands. Do not read any files. End 
 **Trigger:** User has provided a spec (pasted content or file path).
 
 1. If they gave a **file path** — read the file now with the Read tool.
-2. If they **pasted content** — write it to `.verify/spec.md` with the Write tool.
+2. If they **pasted content** — first create the directory, then write the file:
+
+```bash
+mkdir -p .verify
+```
+
+Then write the content to `.verify/spec.md` with the Write tool.
 
 Then run preflight:
 

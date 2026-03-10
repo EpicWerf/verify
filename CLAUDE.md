@@ -12,10 +12,13 @@ opslane/verify — automated acceptance criteria verification for Claude Code ch
 - `scripts/` — pipeline stages: `preflight.sh`, `planner.sh`, `orchestrate.sh`, `agent.sh`, `judge.sh`, `report.sh`
 - `scripts/prompts/` — Claude prompt templates for each stage
 - `tests/` — test scripts (one per stage)
-- `skills/verify/SKILL.md` — the `/verify` Claude Code skill
-- `skills/verify-setup/SKILL.md` — the `/verify-setup` skill
+- `skills/verify/SKILL.md` — the `/verify` Claude Code skill (**source of truth**)
+- `skills/verify-setup/SKILL.md` — the `/verify-setup` skill (**source of truth**)
 - `.verify/` — runtime output (gitignored): `config.json`, `plan.json`, `evidence/`, `auth.json`
 - `docs/evals/` — eval sets for prompt quality testing
+
+## Skill sync
+The skills in `skills/` are the source of truth. A `PostToolUse` hook (`.claude/hooks/sync-skill.sh`) automatically copies them to `~/.claude/skills/` after every Write or Edit. Never edit `~/.claude/skills/verify/SKILL.md` directly — edit the project copy instead.
 
 ## Architecture
 ```
