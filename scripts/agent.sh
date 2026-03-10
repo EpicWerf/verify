@@ -58,8 +58,9 @@ print(content, end='')
 # Playwright MCP config — each agent gets its own --output-dir so videos land
 # directly in the AC's evidence folder (works correctly in parallel runs)
 EVIDENCE_DIR="$(pwd)/.verify/evidence/$AC_ID"
-MCP_CONFIG_FILE=$(mktemp /tmp/verify-mcp-XXXXXX.json)
-jq -n --arg outdir "$EVIDENCE_DIR" '{
+AUTH_STATE_PATH="$(pwd)/.verify/auth.json"
+MCP_CONFIG_FILE=$(mktemp "${TMPDIR:-/tmp}/verify-mcp-XXXXXX")
+jq -n --arg outdir "$EVIDENCE_DIR" --arg authstate "$AUTH_STATE_PATH" '{
   mcpServers: {
     playwright: {
       command: "npx",
@@ -67,7 +68,7 @@ jq -n --arg outdir "$EVIDENCE_DIR" '{
         "@playwright/mcp@latest",
         "--save-video=1280x720",
         "--caps", "vision",
-        "--storage-state", ".verify/auth.json",
+        "--storage-state", $authstate,
         "--save-trace",
         "--output-dir", $outdir
       ]
