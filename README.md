@@ -1,69 +1,62 @@
 # opslane-verify
 
-Browser-based acceptance criteria verification for frontend PRs. Runs Claude + Playwright agents against your local dev server to verify each AC in a spec doc — no CI required.
+A verification layer for Claude Code. Reads your spec doc, runs one browser agent per acceptance criterion against your local dev server, and returns pass/fail with screenshots and video — before you push. No CI. No infrastructure.
 
 ## How it works
 
-1. `/verify-setup` — one-time: captures auth session for apps that require login
-2. `/verify` — runs the full pipeline:
-   - **Planner**: reads your spec doc, extracts testable ACs
-   - **Browser Agents**: one Claude+Playwright agent per AC, takes screenshots
-   - **Judge**: reviews evidence, returns pass/fail per AC
-   - **Report**: prints results with debug links for failures
+```mermaid
+graph LR
+    A[spec doc] --> B[planner]
+    B --> C[agent: AC 1]
+    B --> D[agent: AC 2]
+    B --> E[agent: AC n]
+    C --> F[judge]
+    D --> F
+    E --> F
+    F --> G[report]
+```
+
+1. **Planner** — extracts testable acceptance criteria from your spec
+2. **Agents** — one Claude + Playwright agent per AC, runs against your dev server
+3. **Judge** — reviews screenshots and traces, returns pass/fail per AC
+4. **Report** — prints results; failures include screenshot links and session recordings
+
+![Verify Report](docs/report-screenshot.png)
 
 ## Installation
 
-### Claude Code
-
-Register the marketplace:
-
-```bash
-/plugin marketplace add opslane/opslane-v3
-```
-
-Install the plugin:
-
-```bash
-/plugin install opslane-verify@opslane-v3
-```
-
 ### Prerequisites
 
-- `claude` CLI with OAuth login (`claude login`)
-- `node` + `npx` (for Playwright MCP)
-- `jq`
-- `curl`
-- `coreutils` on macOS: `brew install coreutils` (for `gtimeout`)
+- Claude Code with OAuth login (`claude login`)
+- Playwright MCP
+
+### Install
+
+```bash
+/plugin marketplace add opslane/verify
+/plugin install opslane-verify@opslane/verify
+```
+
+**macOS only:** `brew install coreutils` (for `gtimeout`)
 
 ## Usage
 
 ```bash
-# One-time auth setup (skip if app has no login)
+# One-time auth setup (skip if your app has no login)
 /verify-setup
 
 # Run verification
-/verify
+/verify docs/plans/my-feature.md
 ```
 
-## Configuration
-
-`.verify/config.json` (created by `/verify-setup`):
-
-```json
-{
-  "baseUrl": "http://localhost:3000",
-  "authCheckUrl": "/api/me",
-  "specPath": null
-}
-```
-
-- `baseUrl`: your dev server URL
-- `authCheckUrl`: endpoint that returns 200 when authenticated
-- `specPath`: override spec doc path (default: auto-detect from `docs/plans/`)
+If you don't pass a spec path, `/verify` will ask you for one.
 
 ## Debugging failures
 
 ```bash
+# View Playwright trace for a failed AC
 npx playwright show-report .verify/evidence/<ac_id>/trace
+
+# Watch session recording
 open .verify/evidence/<ac_id>/session.webm
 ```
