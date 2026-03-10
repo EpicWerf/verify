@@ -55,9 +55,11 @@ content = content.replace('REPLACE_STEPS',          os.environ['REPLACE_STEPS_VA
 print(content, end='')
 " "$SCRIPT_DIR/prompts/agent.txt" > ".verify/prompts/${AC_ID}-agent.txt"
 
-# Playwright MCP config — write to temp file (--mcp-config expects a path)
+# Playwright MCP config — each agent gets its own --output-dir so videos land
+# directly in the AC's evidence folder (works correctly in parallel runs)
+EVIDENCE_DIR="$(pwd)/.verify/evidence/$AC_ID"
 MCP_CONFIG_FILE=$(mktemp /tmp/verify-mcp-XXXXXX.json)
-jq -n '{
+jq -n --arg outdir "$EVIDENCE_DIR" '{
   mcpServers: {
     playwright: {
       command: "npx",
@@ -66,7 +68,8 @@ jq -n '{
         "--save-video=1280x720",
         "--caps", "vision",
         "--storage-state", ".verify/auth.json",
-        "--save-trace"
+        "--save-trace",
+        "--output-dir", $outdir
       ]
     }
   }
@@ -101,4 +104,11 @@ else
   fi
   VERDICT=$(grep "^VERDICT:" "$LOG_FILE" | awk '{print $2}')
   echo "  ✓ $AC_ID: done (verdict: $VERDICT)"
+fi
+
+# Video lands in the evidence dir via --output-dir; rename UUID to session.webm
+LATEST_VIDEO=$(find "$EVIDENCE_DIR" -name "*.webm" 2>/dev/null | head -1)
+if [ -n "$LATEST_VIDEO" ] && [ "$LATEST_VIDEO" != "$EVIDENCE_DIR/session.webm" ]; then
+  mv "$LATEST_VIDEO" "$EVIDENCE_DIR/session.webm"
+  echo "  📹 $AC_ID: video saved"
 fi
