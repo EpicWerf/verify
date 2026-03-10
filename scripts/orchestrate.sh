@@ -23,7 +23,10 @@ echo "→ Running $COUNT browser agent(s)..."
 # Default sequential: avoids Playwright MCP port/video contention on shared machines
 if [ "${VERIFY_SEQUENTIAL:-1}" = "1" ]; then
   echo "  Mode: sequential"
+  DONE=0
   for AC_ID in "${AC_IDS[@]}"; do
+    DONE=$((DONE + 1))
+    echo "  [$DONE/$COUNT] Starting $AC_ID..."
     "$AGENT_BIN" "$AC_ID" "${AGENT_TIMEOUT:-240}"
   done
 else

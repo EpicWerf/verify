@@ -14,4 +14,10 @@ case "$FILE_PATH" in
     cp "$FILE_PATH" ~/.claude/skills/verify-setup/SKILL.md
     echo "synced skills/verify-setup/SKILL.md → ~/.claude/skills/verify-setup/SKILL.md" >&2
     ;;
+  *scripts/agent.sh|*scripts/orchestrate.sh|*scripts/preflight.sh|*scripts/planner.sh|*scripts/judge.sh|*scripts/report.sh)
+    SCRIPT_NAME=$(basename "$FILE_PATH")
+    mkdir -p ~/.claude/tools/verify
+    cp "$FILE_PATH" ~/.claude/tools/verify/"$SCRIPT_NAME"
+    echo "synced $SCRIPT_NAME → ~/.claude/tools/verify/$SCRIPT_NAME" >&2
+    ;;
 esac
