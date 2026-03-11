@@ -8,26 +8,28 @@ description: Verify frontend changes against spec acceptance criteria locally. U
 Verify your frontend changes before pushing.
 
 ## Prerequisites
-- Dev server running (e.g. `npm run dev`)
 - Auth set up (`/verify-setup`) if app requires login
+- `.verify/config.json` with build/start commands (see bottom of this file)
+
+## Auto-Advance Mode
+
+**If `.verify/spec.md` already exists** (e.g., written during planning via `build-and-verify`), skip Turns 1–4 entirely. The spec was already reviewed and approved by the user during planning. Go directly to Turn 5.
 
 ## Conversation Flow
 
-This skill is turn-based. Each turn has a trigger and a bounded set of actions. **Never skip ahead.**
+This skill is turn-based. Each turn has a trigger and a bounded set of actions. **Never skip ahead** (unless auto-advance applies above).
 
 ---
 
 ## Turn 1: Spec Intake
 
-**Trigger:** User invokes `/verify`.
+**Trigger:** User invokes `/verify` AND `.verify/spec.md` does NOT exist.
 
 **Your only action:** Send this message and end your response:
 
 > "What spec are you verifying? Paste the spec content or give a file path."
 
 Do not call any tools. Do not run any bash commands. Do not read any files. End your response and wait for the user to reply.
-
-**Even if the user passed a path as an argument to `/verify`**, still send this prompt to confirm — do not skip ahead to Turn 2.
 
 ---
 
@@ -47,7 +49,7 @@ Then write the content to `.verify/spec.md` with the Write tool.
 Then run preflight:
 
 ```bash
-bash ~/.claude/tools/verify/preflight.sh
+bash ~/Documents/Github/verify/scripts/preflight.sh
 ```
 
 Stop if preflight fails. Fix the reported issue and ask the user to re-run.
@@ -97,7 +99,7 @@ Write `.verify/spec.md` incorporating all clarifications as inline HTML comments
 Then run the planner:
 
 ```bash
-VERIFY_ALLOW_DANGEROUS=1 bash ~/.claude/tools/verify/planner.sh .verify/spec.md
+VERIFY_ALLOW_DANGEROUS=1 bash ~/Documents/Github/verify/scripts/planner.sh .verify/spec.md
 ```
 
 **Step 1 — Show extracted ACs (no testability labels):**
@@ -137,9 +139,11 @@ Present all ACs together in a single block. **Setup commands are shown here but 
 > **AC3** — [description]
 > → No setup needed
 
-**Step 4 — Single confirmation**
+**Step 4 — Confirmation**
 
-Ask:
+**If auto-advancing** (spec was pre-written): skip this step — proceed directly to Step 5.
+
+**If interactive** (user provided spec in Turn 1): Ask:
 > "Ready to set up and run? (y = set up and run all / s [ac-id] = skip that AC / edit = adjust setup)"
 
 - `y` — proceed to Step 5
@@ -175,22 +179,9 @@ rm -f /tmp/verify-mcp-*.json
 mkdir -p .verify/evidence
 ```
 
-Run orchestrate in background so you can monitor it:
+Run orchestrate in the foreground — **never background this**:
 ```bash
-VERIFY_ALLOW_DANGEROUS=1 bash ~/.claude/tools/verify/orchestrate.sh &
-ORCH_PID=$!
-```
-
-Then poll progress until done:
-```bash
-while kill -0 $ORCH_PID 2>/dev/null; do
-  TOTAL=$(jq '.criteria | length' .verify/plan.json 2>/dev/null || echo "?")
-  DONE=$(ls .verify/evidence/*/agent.log 2>/dev/null | wc -l | tr -d ' ')
-  CURRENT=$(ls -t .verify/evidence/*/claude.log 2>/dev/null | head -1 | cut -d/ -f4)
-  echo "  Progress: $DONE/$TOTAL done${CURRENT:+ — $CURRENT running}"
-  sleep 10
-done
-wait $ORCH_PID
+VERIFY_ALLOW_DANGEROUS=1 bash ~/Documents/Github/verify/scripts/orchestrate.sh
 ```
 
 ---
@@ -198,7 +189,7 @@ wait $ORCH_PID
 ## Stage 3: Judge
 
 ```bash
-VERIFY_ALLOW_DANGEROUS=1 bash ~/.claude/tools/verify/judge.sh
+VERIFY_ALLOW_DANGEROUS=1 bash ~/Documents/Github/verify/scripts/judge.sh
 ```
 
 ---
@@ -206,7 +197,7 @@ VERIFY_ALLOW_DANGEROUS=1 bash ~/.claude/tools/verify/judge.sh
 ## Report
 
 ```bash
-VERIFY_ALLOW_DANGEROUS=1 bash ~/.claude/tools/verify/report.sh
+VERIFY_ALLOW_DANGEROUS=1 bash ~/Documents/Github/verify/scripts/report.sh
 ```
 
 ---
@@ -221,11 +212,25 @@ VERIFY_ALLOW_DANGEROUS=1 bash ~/.claude/tools/verify/report.sh
 | Judge returns invalid JSON | Print raw output, tell user to check `.verify/evidence/` manually |
 | `progress.jsonl` missing after orchestrate | Agents never started or all exited instantly — check `.verify/evidence/*/claude.log` |
 
+## Config
+
+`.verify/config.json` in the project root:
+
+```json
+{
+  "baseUrl": "http://localhost:3000",
+  "buildCmd": "npm run build",
+  "startCmd": "npm start"
+}
+```
+
+Preflight will run `buildCmd`, then start `startCmd` as a background process, and clean it up after the report.
+
 ## Quick Reference
 
 ```bash
 /verify-setup                                          # one-time auth
-/verify                                                # run pipeline
+/verify                                                # run pipeline (auto-advances if .verify/spec.md exists)
 npx playwright show-report .verify/evidence/<id>/trace # debug failure
 open .verify/evidence/<id>/session.webm                # watch video
 ```

@@ -149,3 +149,16 @@ if [ -f ".verify/report.html" ]; then
   ABS_REPORT="$(cd .verify && pwd)/report.html"
   open -a "Google Chrome" "$ABS_REPORT" 2>/dev/null || open "$ABS_REPORT" 2>/dev/null || true
 fi
+
+# Clean up prod server if we started one
+if [ -f ".verify/.server_pid" ]; then
+  SERVER_PID=$(cat .verify/.server_pid)
+  if kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "→ Stopping prod server (pid $SERVER_PID)..."
+    kill "$SERVER_PID" 2>/dev/null || true
+    sleep 1
+    kill -0 "$SERVER_PID" 2>/dev/null && kill -9 "$SERVER_PID" 2>/dev/null || true
+    echo "✓ Server stopped"
+  fi
+  rm -f .verify/.server_pid
+fi

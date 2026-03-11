@@ -26,27 +26,56 @@ CONFIG_FILE=".verify/config.json"
 VERIFY_BASE_URL="${VERIFY_BASE_URL:-$(jq -r '.baseUrl // "http://localhost:3000"' "$CONFIG_FILE" 2>/dev/null || echo "http://localhost:3000")}"
 VERIFY_AUTH_CHECK_URL="${VERIFY_AUTH_CHECK_URL:-$(jq -r '.authCheckUrl // "/api/me"' "$CONFIG_FILE" 2>/dev/null || echo "/api/me")}"
 VERIFY_SPEC_PATH="${VERIFY_SPEC_PATH:-$(jq -r '.specPath // empty' "$CONFIG_FILE" 2>/dev/null || echo "")}"
-export VERIFY_BASE_URL VERIFY_AUTH_CHECK_URL VERIFY_SPEC_PATH
+VERIFY_BUILD_CMD="${VERIFY_BUILD_CMD:-$(jq -r '.buildCmd // "npm run build"' "$CONFIG_FILE" 2>/dev/null || echo "npm run build")}"
+VERIFY_START_CMD="${VERIFY_START_CMD:-$(jq -r '.startCmd // "npm start"' "$CONFIG_FILE" 2>/dev/null || echo "npm start")}"
+export VERIFY_BASE_URL VERIFY_AUTH_CHECK_URL VERIFY_SPEC_PATH VERIFY_BUILD_CMD VERIFY_START_CMD
 
-# 1. Dev server health check
 PORT=$(echo "$VERIFY_BASE_URL" | grep -oE ':[0-9]+' | tr -d ':')
-echo "→ Checking dev server at $VERIFY_BASE_URL..."
-if ! curl -sf --max-time 5 "$VERIFY_BASE_URL" > /dev/null 2>&1; then
-  # Surface which process is occupying the port if any
-  if [ -n "$PORT" ]; then
-    OCCUPANT=$(lsof -ti :"$PORT" -sTCP:LISTEN 2>/dev/null | xargs -I{} ps -p {} -o pid=,command= 2>/dev/null | head -1 || true)
-    if [ -n "$OCCUPANT" ]; then
-      echo "✗ Port $PORT is occupied by a different process: $OCCUPANT"
-      echo "  Check your baseUrl in .verify/config.json and start the right dev server."
-    else
-      echo "✗ Dev server not reachable at $VERIFY_BASE_URL. Start it and retry."
-    fi
-  else
-    echo "✗ Dev server not reachable at $VERIFY_BASE_URL. Start it and retry."
-  fi
+
+# 1. Build production bundle and start server
+echo "→ Building production bundle..."
+if ! eval "$VERIFY_BUILD_CMD"; then
+  echo "✗ Build failed. Fix build errors and retry."
   exit 1
 fi
-echo "✓ Dev server reachable"
+echo "✓ Build succeeded"
+
+# Kill any existing process on our port
+if [ -n "$PORT" ]; then
+  EXISTING_PID=$(lsof -ti :"$PORT" -sTCP:LISTEN 2>/dev/null || true)
+  if [ -n "$EXISTING_PID" ]; then
+    echo "→ Killing existing process on port $PORT (pid $EXISTING_PID)"
+    kill "$EXISTING_PID" 2>/dev/null || true
+    sleep 1
+  fi
+fi
+
+echo "→ Starting prod server: $VERIFY_START_CMD (port $PORT)..."
+eval "PORT=${PORT:-3000} $VERIFY_START_CMD" > .verify/server.log 2>&1 &
+VERIFY_SERVER_PID=$!
+echo "$VERIFY_SERVER_PID" > .verify/.server_pid
+
+# Wait for server to be ready (up to 30s)
+echo "→ Waiting for server at $VERIFY_BASE_URL..."
+WAITED=0
+while [ $WAITED -lt 30 ]; do
+  if curl -sf --max-time 2 "$VERIFY_BASE_URL" > /dev/null 2>&1; then
+    break
+  fi
+  if ! kill -0 "$VERIFY_SERVER_PID" 2>/dev/null; then
+    echo "✗ Server process died. Check .verify/server.log"
+    exit 1
+  fi
+  sleep 1
+  WAITED=$((WAITED + 1))
+done
+
+if [ $WAITED -ge 30 ]; then
+  echo "✗ Server failed to start within 30s. Check .verify/server.log"
+  kill "$VERIFY_SERVER_PID" 2>/dev/null || true
+  exit 1
+fi
+echo "✓ Prod server running (pid $VERIFY_SERVER_PID)"
 
 # 2. Auth validity check
 if [ "$SKIP_AUTH" = false ]; then
